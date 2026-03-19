@@ -1,0 +1,18 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { SignInForm } from '../components/SignInForm';
+
+if (Astro.locals.user) {
+  return Astro.redirect('/');
+}
+---
+
+<BaseLayout title="Login | OpenCheats" authPage>
+  <section class="auth-card login-simple-card">
+    <div class="login-brand-lockup">
+      <span class="brand-mark">OC</span>
+      <span class="login-brand-name">OpenCheats</span>
+    </div>
+    <SignInForm client:load />
+  </section>
+</BaseLayout>

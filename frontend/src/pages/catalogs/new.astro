@@ -1,0 +1,12 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { CatalogForm } from '../../components/CatalogForm';
+
+if (!Astro.locals.user) {
+  return Astro.redirect('/login');
+}
+---
+
+<BaseLayout title="New Catalog | OpenCheats">
+  <CatalogForm client:load mode="create" />
+</BaseLayout>

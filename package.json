@@ -1,0 +1,17 @@
+{
+  "name": "open-cheats",
+  "private": true,
+  "packageManager": "pnpm@10.29.3",
+  "scripts": {
+    "dev": "turbo run dev --filter=@open-cheats/web",
+    "dev:web": "turbo run dev --filter=@open-cheats/web",
+    "build": "turbo run build --filter=@open-cheats/web",
+    "typecheck": "turbo run typecheck --filter=@open-cheats/web",
+    "db:auth:generate": "pnpm --filter @open-cheats/web db:auth:generate",
+    "db:generate": "pnpm --filter @open-cheats/web db:generate",
+    "db:migrate": "pnpm --filter @open-cheats/web db:migrate"
+  },
+  "devDependencies": {
+    "turbo": "^2.5.6"
+  }
+}

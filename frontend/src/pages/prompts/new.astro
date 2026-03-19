@@ -1,0 +1,22 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { PromptEditor } from '../../components/PromptEditor';
+import { createEmptyPromptDocument } from '../../lib/prompt-document';
+import { listCatalogs } from '../../lib/server/api';
+
+if (!Astro.locals.user) {
+  return Astro.redirect('/login');
+}
+
+const catalogs = await listCatalogs(Astro.locals.db, Astro.locals.user.id, true);
+---
+
+<BaseLayout title="New Prompt | OpenCheats">
+  <PromptEditor
+    client:load
+    mode="create"
+    initialTitle=""
+    initialDocument={createEmptyPromptDocument()}
+    catalogs={catalogs}
+  />
+</BaseLayout>

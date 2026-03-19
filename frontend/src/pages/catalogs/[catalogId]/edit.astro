@@ -1,0 +1,31 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import { CatalogForm } from '../../../components/CatalogForm';
+import { getCatalogById } from '../../../lib/server/api';
+
+if (!Astro.locals.user) {
+  return Astro.redirect('/login');
+}
+
+const catalogId = Astro.params.catalogId;
+if (!catalogId) {
+  return Astro.redirect('/catalogs');
+}
+
+const catalog = await getCatalogById(Astro.locals.db, Astro.locals.user.id, catalogId, true);
+
+if (!catalog) {
+  return Astro.redirect('/catalogs');
+}
+---
+
+<BaseLayout title={`${catalog.name} | OpenCheats`}>
+  <CatalogForm
+    client:load
+    mode="edit"
+    catalogId={catalog.id}
+    initialName={catalog.name}
+    initialDescription={catalog.description ?? ''}
+    initialOptions={catalog.options.filter((option) => !option.is_archived)}
+  />
+</BaseLayout>

@@ -1,0 +1,46 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { CatalogCard } from '../../components/CatalogCard';
+import { EmptyState } from '../../components/EmptyState';
+import { listCatalogs } from '../../lib/server/api';
+
+if (!Astro.locals.user) {
+  return Astro.redirect('/login');
+}
+
+const catalogs = await listCatalogs(Astro.locals.db, Astro.locals.user.id, true);
+---
+
+<BaseLayout title="Catalogs | OpenCheats">
+  {catalogs.length === 0 ? (
+    <EmptyState
+      title="Catalog はまだありません"
+      description="先に Catalog を作ると、Prompt から Item を差し込めます。"
+      actionLabel="Catalog を作成"
+      actionHref="/catalogs/new"
+    />
+  ) : (
+    <section class="stack-md catalog-list-shell">
+      <div class="catalog-list-header">
+        <div>
+          <h1 class="section-title section-title-xl">Catalogs</h1>
+        </div>
+        <div class="catalog-list-actions">
+          <a href="/catalogs/new" class="btn-primary">New Catalog</a>
+        </div>
+      </div>
+
+      <div class="catalog-grid">
+        {catalogs.map((catalog) => (
+          <CatalogCard
+            id={catalog.id}
+            name={catalog.name}
+            description={catalog.description}
+            optionCount={catalog.options.filter((option) => !option.is_archived).length}
+            updatedAt={catalog.updated_at}
+          />
+        ))}
+      </div>
+    </section>
+  )}
+</BaseLayout>

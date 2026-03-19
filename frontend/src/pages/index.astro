@@ -1,0 +1,73 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { EmptyState } from '../components/EmptyState';
+import { PromptCard } from '../components/PromptCard';
+import type { CatalogResponse, PromptResponse } from '../lib/server/api';
+import { listCatalogs, listPrompts } from '../lib/server/api';
+import { resolvePromptDocument, toPlainPromptText } from '../lib/prompt-document';
+
+if (!Astro.locals.user) {
+  return Astro.redirect('/login');
+}
+
+let prompts: PromptResponse[] = [];
+let catalogs: CatalogResponse[] = [];
+
+try {
+  [prompts, catalogs] = await Promise.all([
+    listPrompts(Astro.locals.db, Astro.locals.user.id),
+    listCatalogs(Astro.locals.db, Astro.locals.user.id, true),
+  ]);
+} catch {
+  prompts = [];
+  catalogs = [];
+}
+
+const optionIndex = new Map(
+  catalogs.flatMap((catalog) =>
+    catalog.options.map((option) => [
+      option.id,
+      {
+        id: option.id,
+        label: option.label,
+        value: option.value,
+        is_archived: option.is_archived,
+      },
+    ] as const),
+  ),
+);
+---
+
+<BaseLayout title="Prompts | OpenCheats">
+  {prompts.length === 0 ? (
+    <EmptyState
+      title="Prompt はまだありません"
+      description="最初の Prompt を作ると、Catalog Token を差し込みながら試行錯誤を始められます。"
+      actionLabel="Prompt を作成"
+      actionHref="/prompts/new"
+    />
+  ) : (
+    <section class="stack-md prompt-list-shell">
+      <div class="prompt-list-header">
+        <div>
+          <h1 class="section-title section-title-xl">Prompts</h1>
+        </div>
+        <div class="prompt-list-actions">
+          <a href="/prompts/new" class="btn-primary">New Prompt</a>
+        </div>
+      </div>
+
+      <div class="prompt-grid">
+        {prompts.map((prompt) => (
+          <PromptCard
+            id={prompt.id}
+            title={prompt.title}
+            version={prompt.current_version}
+            updatedAt={prompt.updated_at}
+            preview={toPlainPromptText(resolvePromptDocument(prompt.document, optionIndex)).slice(0, 180)}
+          />
+        ))}
+      </div>
+    </section>
+  )}
+</BaseLayout>

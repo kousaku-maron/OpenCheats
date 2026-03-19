@@ -1,0 +1,34 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import { PromptEditor } from '../../../components/PromptEditor';
+import { getPromptById, listCatalogs } from '../../../lib/server/api';
+
+if (!Astro.locals.user) {
+  return Astro.redirect('/login');
+}
+
+const promptId = Astro.params.promptId;
+if (!promptId) {
+  return Astro.redirect('/');
+}
+
+const [prompt, catalogs] = await Promise.all([
+  getPromptById(Astro.locals.db, Astro.locals.user.id, promptId),
+  listCatalogs(Astro.locals.db, Astro.locals.user.id, true),
+]);
+
+if (!prompt) {
+  return Astro.redirect('/');
+}
+---
+
+<BaseLayout title={`${prompt.title} | OpenCheats`}>
+  <PromptEditor
+    client:load
+    mode="edit"
+    promptId={prompt.id}
+    initialTitle={prompt.title}
+    initialDocument={prompt.document}
+    catalogs={catalogs}
+  />
+</BaseLayout>
