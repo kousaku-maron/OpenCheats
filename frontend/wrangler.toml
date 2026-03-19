@@ -9,3 +9,8 @@ BETTER_AUTH_URL = "https://opencheats.kousaku-maron.workers.dev"
 [assets]
 binding = "ASSETS"
 directory = "./dist"
+
+[[kv_namespaces]]
+binding = "SESSION"
+id = "153d37c4e06845809a3810faee5be82d"
+preview_id = "153d37c4e06845809a3810faee5be82d"
