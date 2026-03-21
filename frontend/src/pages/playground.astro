@@ -1,0 +1,27 @@
+---
+import { PlaygroundShell } from '../components/PlaygroundShell';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { listCatalogs, listPrompts } from '../lib/server/api';
+
+if (!Astro.locals.user) {
+  return Astro.redirect('/login');
+}
+
+const prompts = await listPrompts(Astro.locals.db, Astro.locals.user.id);
+const catalogs = await listCatalogs(Astro.locals.db, Astro.locals.user.id);
+const initialPromptId = Astro.url.searchParams.get('promptId');
+---
+
+<BaseLayout title="Playground | OpenCheats" fullWidth>
+  <PlaygroundShell
+    client:load
+    prompts={prompts.map((prompt) => ({
+      id: prompt.id,
+      title: prompt.title,
+      current_version: prompt.current_version,
+      document: prompt.document,
+    }))}
+    catalogs={catalogs}
+    initialPromptId={initialPromptId}
+  />
+</BaseLayout>

@@ -7,6 +7,8 @@ interface Env {
   BETTER_AUTH_URL: string;
   GOOGLE_CLIENT_ID: string;
   GOOGLE_CLIENT_SECRET: string;
+  CREDENTIAL_ENCRYPTION_SECRET: string;
+  PLAYGROUND_BUCKET: R2Bucket;
 }
 
 declare namespace App {

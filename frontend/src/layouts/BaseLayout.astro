@@ -1,14 +1,16 @@
 ---
 import '../styles/global.css';
+import { UserRound } from 'lucide-preact';
 import { SignOutButton } from '../components/SignOutButton';
 
-const { title = 'OpenCheats', authPage = false } = Astro.props;
+const { title = 'OpenCheats', authPage = false, fullWidth = false } = Astro.props;
 const user = Astro.locals.user;
 const currentPath = new URL(Astro.request.url).pathname;
 
 const navItems = user
   ? [
       { href: '/', label: 'Prompts' },
+      { href: '/playground', label: 'Playground' },
       { href: '/catalogs', label: 'Catalogs' },
     ]
   : [];
@@ -53,16 +55,12 @@ function isActive(href: string) {
           <details class="user-menu">
             <summary class="user-menu-trigger" aria-label="Account menu">
               <span class="user-menu-icon" aria-hidden="true">
-                <svg viewBox="0 0 20 20" focusable="false">
-                  <path
-                    d="M10 10a3.25 3.25 0 1 0 0-6.5 3.25 3.25 0 0 0 0 6.5Zm0 1.75c-3.16 0-5.75 1.8-5.75 4.01 0 .4.33.74.74.74h10.02c.41 0 .74-.34.74-.74 0-2.21-2.59-4.01-5.75-4.01Z"
-                    fill="currentColor"
-                  />
-                </svg>
+                <UserRound />
               </span>
             </summary>
             <div class="user-menu-panel">
               <p class="user-menu-email">{user.email}</p>
+              <a href="/settings/providers" class="btn-secondary user-menu-link">AI Models</a>
               <SignOutButton client:load className="user-menu-signout" />
             </div>
           </details>
@@ -76,8 +74,14 @@ function isActive(href: string) {
       </div>
     </header>
 
-    <main class:list={['page-shell', authPage && 'page-shell-auth']}>
-      <slot />
+    <main class:list={['page-shell', authPage && 'page-shell-auth', fullWidth && 'page-shell-full']}>
+      {fullWidth || authPage ? (
+        <slot />
+      ) : (
+        <div class="page-shell-inner">
+          <slot />
+        </div>
+      )}
     </main>
 
     <script>

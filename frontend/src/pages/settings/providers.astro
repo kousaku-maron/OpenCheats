@@ -1,0 +1,15 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { ProviderSettingsForm } from '../../components/ProviderSettingsForm';
+import { listProviderCredentialSummaries } from '../../lib/server/provider-credentials';
+
+if (!Astro.locals.user) {
+  return Astro.redirect('/login');
+}
+
+const summaries = await listProviderCredentialSummaries(Astro.locals.db, Astro.locals.user.id);
+---
+
+<BaseLayout title="AI Models | OpenCheats">
+  <ProviderSettingsForm client:load initialSummaries={summaries} />
+</BaseLayout>

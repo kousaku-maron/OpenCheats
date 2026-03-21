@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
+import { ArrowLeft, Check, Copy, Plus } from 'lucide-preact';
 import type { CatalogResponse } from '../lib/server/api';
 import {
   createEmptyPromptDocument,
@@ -615,16 +616,7 @@ export function PromptEditor({
       <form className="stack-lg" onSubmit={handleSubmit}>
         <div className="field-nav-row">
           <a href="/" className="btn-secondary button-with-icon nav-back-link" aria-label="Prompts に戻る">
-            <svg viewBox="0 0 20 20" focusable="false" aria-hidden="true">
-              <path
-                d="M11.75 4.75 6.5 10l5.25 5.25"
-                fill="none"
-                stroke="currentColor"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="1.9"
-              />
-            </svg>
+            <ArrowLeft aria-hidden="true" />
             <span>Prompts</span>
           </a>
         </div>
@@ -671,27 +663,9 @@ export function PromptEditor({
                     onClick={copyPrompt}
                   >
                     {copyFeedbackVisible ? (
-                      <svg viewBox="0 0 20 20" focusable="false" aria-hidden="true">
-                        <path
-                          d="m5.5 10.25 3 3.25 6-7"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth="1.9"
-                        />
-                      </svg>
+                      <Check aria-hidden="true" />
                     ) : (
-                      <svg viewBox="0 0 20 20" focusable="false" aria-hidden="true">
-                        <path
-                          d="M7 6.75A2.25 2.25 0 0 1 9.25 4.5h5A2.25 2.25 0 0 1 16.5 6.75v7A2.25 2.25 0 0 1 14.25 16h-5A2.25 2.25 0 0 1 7 13.75v-7Zm-3.5 6.5v-7A2.75 2.75 0 0 1 6.25 3.5h5.25"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth="1.6"
-                        />
-                      </svg>
+                      <Copy aria-hidden="true" />
                     )}
                   </button>
                 </div>
@@ -705,24 +679,15 @@ export function PromptEditor({
                   <div className="editor-title-row">
                     <h2 className="section-title">Prompt</h2>
                     <button
-                      type="button"
-                      className="btn-secondary button-with-icon"
-                      onClick={() => openPicker('insert')}
-                    >
-                      <span className="button-icon" aria-hidden="true">
-                        <svg viewBox="0 0 20 20" focusable="false">
-                          <path
-                            d="M10 4.25v11.5M4.25 10h11.5"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth="1.8"
-                          />
-                        </svg>
-                      </span>
-                      Item
-                    </button>
+                    type="button"
+                    className="btn-secondary button-with-icon"
+                    onClick={() => openPicker('insert')}
+                  >
+                    <span className="button-icon" aria-hidden="true">
+                      <Plus />
+                    </span>
+                    Item
+                  </button>
                   </div>
                 </div>
                 <div className="toolbar-meta">
@@ -745,27 +710,9 @@ export function PromptEditor({
                     onClick={copyPrompt}
                   >
                     {copyFeedbackVisible ? (
-                      <svg viewBox="0 0 20 20" focusable="false" aria-hidden="true">
-                        <path
-                          d="m5.5 10.25 3 3.25 6-7"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth="1.9"
-                        />
-                      </svg>
+                      <Check aria-hidden="true" />
                     ) : (
-                      <svg viewBox="0 0 20 20" focusable="false" aria-hidden="true">
-                        <path
-                          d="M7 6.75A2.25 2.25 0 0 1 9.25 4.5h5A2.25 2.25 0 0 1 16.5 6.75v7A2.25 2.25 0 0 1 14.25 16h-5A2.25 2.25 0 0 1 7 13.75v-7Zm-3.5 6.5v-7A2.75 2.75 0 0 1 6.25 3.5h5.25"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth="1.6"
-                        />
-                      </svg>
+                      <Copy aria-hidden="true" />
                     )}
                   </button>
                 </div>
@@ -797,6 +744,11 @@ export function PromptEditor({
           <button type="submit" className="btn-primary" disabled={loading}>
             {loading ? 'Saving...' : 'Save'}
           </button>
+          {mode === 'edit' && promptId ? (
+            <a href={`/playground?promptId=${promptId}`} className="btn-secondary">
+              Open in Playground
+            </a>
+          ) : null}
           {mode === 'edit' ? (
             <button type="button" className="btn-ghost-danger" onClick={handleDelete} disabled={loading}>
               Delete
@@ -819,16 +771,7 @@ export function PromptEditor({
                     aria-label="Catalogs に戻る"
                     onClick={() => setPickerCatalogId(null)}
                   >
-                    <svg viewBox="0 0 20 20" focusable="false" aria-hidden="true">
-                      <path
-                        d="M11.75 4.75 6.5 10l5.25 5.25"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="1.9"
-                      />
-                    </svg>
+                    <ArrowLeft aria-hidden="true" />
                   </button>
                 ) : null}
                 <h2 className="section-title">{pickerTitle}</h2>

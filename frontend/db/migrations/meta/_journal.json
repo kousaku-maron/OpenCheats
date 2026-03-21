@@ -8,6 +8,48 @@
       "when": 1773881886599,
       "tag": "0000_known_warlock",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1773905286882,
+      "tag": "0001_perpetual_squadron_sinister",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1773907042441,
+      "tag": "0002_little_killer_shrike",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1773909139017,
+      "tag": "0003_breezy_ted_forrester",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1773926588485,
+      "tag": "0004_harsh_dexter_bennett",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1773929116377,
+      "tag": "0005_daffy_wallflower",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1774000000000,
+      "tag": "0006_mellow_signal",
+      "breakpoints": true
     }
   ]
 }

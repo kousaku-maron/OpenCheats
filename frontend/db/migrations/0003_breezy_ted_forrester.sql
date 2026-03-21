@@ -1,0 +1,1 @@
+ALTER TABLE "runs" ALTER COLUMN "prompt_version_id" DROP NOT NULL;

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'preact/hooks';
+import { ArrowLeft, Plus } from 'lucide-preact';
 
 type CatalogOptionFormValue = {
   id?: string;
@@ -139,16 +140,7 @@ export function CatalogForm({
     <form className="stack-lg catalog-form-shell" onSubmit={handleSubmit}>
       <div className="field-nav-row">
         <a href="/catalogs" className="btn-secondary button-with-icon nav-back-link" aria-label="Catalogs に戻る">
-          <svg viewBox="0 0 20 20" focusable="false" aria-hidden="true">
-            <path
-              d="M11.75 4.75 6.5 10l5.25 5.25"
-              fill="none"
-              stroke="currentColor"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="1.9"
-            />
-          </svg>
+          <ArrowLeft aria-hidden="true" />
           <span>Catalogs</span>
         </a>
       </div>
@@ -192,16 +184,7 @@ export function CatalogForm({
           <h2 className="section-title">Items</h2>
           <button type="button" className="btn-secondary button-with-icon" onClick={addOption}>
             <span className="button-icon" aria-hidden="true">
-              <svg viewBox="0 0 20 20" focusable="false">
-                <path
-                  d="M10 4.25v11.5M4.25 10h11.5"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="1.8"
-                />
-              </svg>
+              <Plus />
             </span>
             Item
           </button>
