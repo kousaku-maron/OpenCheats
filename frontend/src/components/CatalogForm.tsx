@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'preact/hooks';
+import { useState } from 'preact/hooks';
 import { ArrowLeft, Plus } from 'lucide-preact';
 
 type CatalogOptionFormValue = {
@@ -51,14 +51,8 @@ export function CatalogForm({
   const [options, setOptions] = useState<CatalogOptionFormValue[]>(() =>
     normalizeInitialOptions(initialOptions),
   );
-  const [status, setStatus] = useState('');
+  const [, setStatus] = useState('');
   const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    setName(initialName);
-    setDescription(initialDescription);
-    setOptions(normalizeInitialOptions(initialOptions));
-  }, [initialDescription, initialName, initialOptions]);
 
   const setOptionField = (
     index: number,
@@ -245,8 +239,6 @@ export function CatalogForm({
           {loading ? 'Saving...' : 'Save'}
         </button>
       </div>
-
-      {status ? <p className="form-helper">{status}</p> : null}
     </form>
   );
 }

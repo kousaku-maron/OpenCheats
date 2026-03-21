@@ -1,5 +1,5 @@
 import { and, desc, eq, inArray } from 'drizzle-orm';
-import { experimental_generateVideo as generateVideo, generateImage, generateText } from 'ai';
+import { experimental_generateVideo as generateVideo, generateImage, generateText, NoImageGeneratedError } from 'ai';
 import { artifacts, catalogs, catalogOptions, promptVersions, prompts, runs } from '../../../db/schema/app';
 import { normalizePromptDocument, resolvePromptDocument } from '../prompt-document';
 import {
@@ -638,11 +638,23 @@ export async function createRun(
         throw new Error('Gemini key is not configured. Set it in AI Models.');
       }
 
-      const result = await generateImage({
-        model: providers.google.image(parsedModel.modelId),
-        prompt: await getImagePrompt(parsedModel.provider, composedPrompt, resolvedInputs, env),
-        aspectRatio: toAspectRatio(payload.settings.aspect_ratio),
-      });
+      let result;
+      try {
+        result = await generateImage({
+          model: providers.google.image(parsedModel.modelId),
+          prompt: await getImagePrompt(parsedModel.provider, composedPrompt, resolvedInputs, env),
+          aspectRatio: toAspectRatio(payload.settings.aspect_ratio),
+          n: 1,
+        });
+      } catch (error) {
+        if (NoImageGeneratedError.isInstance(error)) {
+          throw new Error(
+            'Nano Banana returned no image. The request reached the provider, but no image was produced. Try a simpler prompt, remove the reference image, or verify that the selected model currently supports this prompt/input combination.',
+          );
+        }
+
+        throw error;
+      }
 
       await Promise.all(
         result.images.map((image) =>

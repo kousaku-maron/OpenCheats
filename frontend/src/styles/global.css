@@ -602,6 +602,24 @@ textarea {
   gap: 18px;
 }
 
+.prompt-grid-empty,
+.catalog-grid-empty {
+  display: grid;
+  place-items: center;
+  min-height: 260px;
+  padding: 32px;
+  border: 1px dashed rgba(255, 255, 255, 0.14);
+  border-radius: 28px;
+  background: rgba(255, 255, 255, 0.02);
+  text-align: center;
+}
+
+.prompt-grid-empty > div,
+.catalog-grid-empty > div {
+  display: grid;
+  gap: 8px;
+}
+
 .catalog-list-shell {
   gap: 22px;
 }
@@ -610,6 +628,18 @@ textarea {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 18px;
+}
+
+.empty-panel-title {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+}
+
+.empty-panel-copy {
+  margin: 8px 0 0;
+  color: var(--muted);
 }
 
 .prompt-card {

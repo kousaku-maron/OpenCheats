@@ -281,7 +281,7 @@ export function PromptEditor({
 
   const [title, setTitle] = useState(initialTitle);
   const [currentDocument, setCurrentDocument] = useState<PromptDocument>(normalizedInitialDocument);
-  const [status, setStatus] = useState('');
+  const [, setStatus] = useState('');
   const [loading, setLoading] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [pickerMode, setPickerMode] = useState<PickerMode>('insert');
@@ -755,8 +755,6 @@ export function PromptEditor({
             </button>
           ) : null}
         </div>
-
-        {status ? <p className="form-helper">{status}</p> : null}
       </form>
 
       {pickerOpen ? (

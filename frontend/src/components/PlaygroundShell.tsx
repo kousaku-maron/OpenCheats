@@ -1,4 +1,4 @@
-import { ChevronDown, ChevronUp, Ellipsis, ImagePlus, SlidersHorizontal, X } from 'lucide-preact';
+import { ChevronDown, ChevronUp, Clapperboard, Ellipsis, FileText, Image as ImageIcon, ImagePlus, SlidersHorizontal, X } from 'lucide-preact';
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { defaultModel, getSupportedModel, supportedModels } from '../lib/playground-logic';
 import type { CatalogResponse } from '../lib/server/api';
@@ -301,6 +301,20 @@ function historyKindLabel(item: HistoryItem) {
   return 'text';
 }
 
+function HistoryKindBadge({ item }: { item: HistoryItem }) {
+  const kind = historyKindLabel(item);
+  const iconProps = { size: 14, strokeWidth: 1.9 };
+
+  return (
+    <span className="version-badge">
+      {kind === 'image' ? <ImageIcon {...iconProps} /> : null}
+      {kind === 'video' ? <Clapperboard {...iconProps} /> : null}
+      {kind === 'text' ? <FileText {...iconProps} /> : null}
+      <span>{kind}</span>
+    </span>
+  );
+}
+
 function inputTileMetaLabel(artifact: ImageInputItem) {
   if (isLocalImageInput(artifact)) {
     return 'Local image';
@@ -537,7 +551,7 @@ export function PlaygroundShell({ prompts, catalogs, initialPromptId = null }: P
   const [klingStartInput, setKlingStartInput] = useState<ImageInputItem | null>(null);
   const [klingEndInput, setKlingEndInput] = useState<ImageInputItem | null>(null);
   const [history, setHistory] = useState<HistoryItem[]>([]);
-  const [status, setStatus] = useState('');
+  const [, setStatus] = useState('');
   const [loading, setLoading] = useState(false);
   const [pickerNodeId, setPickerNodeId] = useState<string | null>(null);
   const [promptPickerOpen, setPromptPickerOpen] = useState(false);
@@ -1113,8 +1127,6 @@ export function PlaygroundShell({ prompts, catalogs, initialPromptId = null }: P
                 {loading ? 'Generating...' : 'Generate'}
               </button>
             </div>
-
-            {status ? <p className="form-helper">{status}</p> : null}
           </div>
         </form>
 
@@ -1136,7 +1148,7 @@ export function PlaygroundShell({ prompts, catalogs, initialPromptId = null }: P
                     <div className="playground-history-header">
                       <div>
                         <div className="playground-history-title-row">
-                          <span className="version-badge">{historyKindLabel(item)}</span>
+                          <HistoryKindBadge item={item} />
                           <h3 className="list-card-title">
                             {item.prompt_version ? `${item.prompt_title} / v${item.prompt_version}` : item.prompt_title}
                           </h3>
@@ -1144,6 +1156,9 @@ export function PlaygroundShell({ prompts, catalogs, initialPromptId = null }: P
                         <p className="list-card-meta">
                           {statusLabel(item.status)} · {item.model} · {formatDate(item.created_at)}
                         </p>
+                        {item.error_message ? (
+                          <p className="form-helper form-helper-error">{item.error_message}</p>
+                        ) : null}
                       </div>
                     </div>
 
@@ -1208,10 +1223,6 @@ export function PlaygroundShell({ prompts, catalogs, initialPromptId = null }: P
 
                     {isExpanded ? (
                       <div className="playground-history-body stack-sm">
-                        {item.error_message ? (
-                          <p className="form-helper form-helper-error">{item.error_message}</p>
-                        ) : null}
-
                         {item.resolved_prompt ? (
                           <div className="playground-history-section stack-sm">
                             <pre className="playground-history-text">{item.resolved_prompt}</pre>
