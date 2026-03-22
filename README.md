@@ -1,122 +1,209 @@
-# Astro Cloudflare Blog Template (Turborepo)
+# OpenCheats
 
-Astro 単体のフルスタック構成で、Cloudflare Workers + Neon(PostgreSQL) + better-auth を使う最小ブログテンプレートです。
-フロントエンドは `@astrojs/preact` と `tailwindcss` に対応しています。
-モノレポ管理は Turborepo です。
+OpenCheats is a prompt workspace and iteration playground for generative AI.
 
-## Tech Stack
+It is built for the real workflow behind image and video generation: try something, inspect the result, change a few variables, try again, and gradually discover what works. Instead of treating prompts as disposable text, OpenCheats treats them as reusable assets with structure, versions, catalogs, run history, and attached outputs.
 
-- **Framework**: Astro
-- **UI**: Preact / Tailwind CSS
-- **Database**: Neon (PostgreSQL)
-- **ORM**: Drizzle ORM
-- **Auth**: better-auth
-- **Hosting**: Cloudflare Workers
-- **Monorepo**: Turborepo / pnpm
+## What It Does
 
-## 構成
+- Create and edit structured prompts
+- Reuse catalog items inside prompts
+- Save prompt versions
+- Run prompts in a dedicated Playground
+- Generate text, images, and videos from the same workspace
+- Reuse generated images as the next input
+- Keep a run history with inputs and outputs
+- Store generated media in R2
+- Let each user configure their own AI model keys
 
-- `frontend/`: Astro Webアプリ (UI + API routes)
-- `frontend/db/schema/auth.ts`: better-auth schema（生成ファイル）
-- `frontend/db/schema/app.ts`: アプリ固有schema
-- `frontend/db/schema/index.ts`: Drizzle統合エントリ
-- `frontend/db/migrations/`: Drizzle migrations
-- `turbo.json`: Turborepo pipeline
+## Product Shape
 
-## セットアップ
+OpenCheats is intentionally split into three areas:
 
-### 1. 前提条件
+- `Prompts`
+  Create and refine reusable prompt templates.
+- `Catalogs`
+  Manage reusable items such as scenes, styles, characters, motions, and fixed phrases.
+- `Playground`
+  Execute prompts, inspect results, and reuse outputs as new inputs.
+
+The main idea is simple:
+
+1. Design a prompt structure.
+2. Run it.
+3. Inspect the result.
+4. Reuse the result as input for the next run.
+5. Keep the whole loop inside one workspace.
+
+## Supported Models
+
+Current model support is intentionally narrow.
+
+- `OpenAI`
+  - `gpt-5.4`
+  - `gpt-5.4-mini`
+  - `gpt-5.4-nano`
+- `Nano Banana`
+  - `gemini-3.1-flash-image-preview`
+- `Kling`
+  - `kling-v2-5-turbo`
+
+Behavior:
+
+- `OpenAI`: text generation
+- `Nano Banana`: text-to-image / image-to-image
+- `Kling`: text-to-video / image-to-video
+
+## Stack
+
+- Astro
+- Preact
+- Tailwind CSS v4
+- Cloudflare Workers
+- Cloudflare KV
+- Cloudflare R2
+- Neon Postgres
+- Drizzle ORM
+- better-auth
+- AI SDK
+
+## Repository Layout
+
+- `frontend/`
+  Astro app, API routes, UI, and Cloudflare Worker output
+- `frontend/src/components/`
+  UI components including `PromptEditor`, `CatalogForm`, `PlaygroundShell`, `ProviderSettingsForm`
+- `frontend/src/pages/`
+  App routes and API routes
+- `frontend/src/lib/server/`
+  Server-side logic for auth, DB, Playground runs, and provider credentials
+- `frontend/db/schema/`
+  Drizzle schemas
+- `frontend/db/migrations/`
+  SQL migrations
+
+## Local Development
+
+### Prerequisites
 
 - Node.js 22+
 - pnpm
-- Cloudflare アカウント
-- Neon アカウント
+- A Neon database
+- A Cloudflare account
+- Google OAuth credentials for login
 
-### 2. インストール
+### Install
 
 ```bash
 pnpm install
 cp frontend/.dev.vars.example frontend/.dev.vars
 ```
 
-### 3. Neon を準備
+### Configure local env
 
-1. Neon でデータベースを作成
-2. 接続文字列を取得 (`postgresql://...`)
+Set these values in `frontend/.dev.vars`:
 
-### 4. 環境変数を設定
+- `DATABASE_URL`
+- `BETTER_AUTH_SECRET`
+- `BETTER_AUTH_URL`
+- `GOOGLE_CLIENT_ID`
+- `GOOGLE_CLIENT_SECRET`
+- `CREDENTIAL_ENCRYPTION_SECRET`
 
-`frontend/.dev.vars` の以下を設定:
+Notes:
 
-- `DATABASE_URL`: Neon の接続文字列
-- `BETTER_AUTH_SECRET`: 十分に長いランダム文字列（32文字以上）
-- `BETTER_AUTH_URL`: `http://127.0.0.1:4321`
+- AI provider keys are not stored in `.dev.vars`.
+- Users configure model keys from the app UI at `AI Models`.
+- Those keys are encrypted before being stored in the database.
 
-### 5. Drizzle マイグレーション実行
-
-```bash
-pnpm db:migrate
-```
-
-better-auth schema を再生成する場合:
+### Run migrations
 
 ```bash
-pnpm db:auth:generate
+pnpm --dir frontend db:migrate
 ```
 
-スキーマ変更時は `pnpm db:generate` で新規マイグレーションを生成。
-
-### 6. 開発サーバーを起動
+### Start the app
 
 ```bash
-pnpm dev
+pnpm --dir frontend dev
 ```
 
-App: `http://127.0.0.1:4321`
+Open:
 
-### 7. サインアップして最初の投稿を作成
+- `http://127.0.0.1:4321`
 
-1. `http://127.0.0.1:4321/signup` でアカウントを作成
-2. `http://127.0.0.1:4321/login` でサインイン
-3. `http://127.0.0.1:4321/new` で最初の投稿を作成
-
-## Cloudflare デプロイ
-
-### 手動デプロイ
-
-`frontend/wrangler.toml` の `BETTER_AUTH_URL` を本番URLへ変更し、secret を登録:
+### Useful commands
 
 ```bash
-cd frontend
-wrangler kv namespace create SESSION
-wrangler secret put DATABASE_URL
-wrangler secret put BETTER_AUTH_SECRET
-pnpm deploy
+pnpm --dir frontend typecheck
+pnpm --dir frontend test:run
+pnpm --dir frontend build
+pnpm --dir frontend db:generate
+pnpm --dir frontend db:studio
 ```
 
-`wrangler kv namespace create SESSION` の結果で表示されるIDを、`frontend/wrangler.toml` の `TODO_SESSION_KV_NAMESPACE_ID` に設定してください。
+## Cloudflare Deployment
 
-### GitHub Actions による自動デプロイ
+The app is deployed as a Cloudflare Worker.
 
-`.github/workflows/deploy.yml` が含まれており、`main` ブランチへの push 時に自動デプロイされます。
+### Required Cloudflare resources
 
-リポジトリの Settings > Secrets and variables > Actions に以下を設定してください:
+- KV namespace
+  - `SESSION`
+- R2 bucket
+  - `PLAYGROUND_BUCKET`
 
-- `CLOUDFLARE_API_TOKEN`: Cloudflare API トークン
+### Required production secrets / vars
 
-## API
+- `DATABASE_URL`
+- `BETTER_AUTH_SECRET`
+- `BETTER_AUTH_URL`
+- `GOOGLE_CLIENT_ID`
+- `GOOGLE_CLIENT_SECRET`
+- `CREDENTIAL_ENCRYPTION_SECRET`
+- `CLOUDFLARE_ACCOUNT_ID`
+- `CLOUDFLARE_API_TOKEN`
 
-- `GET /api/health`
-- `GET /api/me`
-- `GET /api/posts`
-- `GET /api/posts/:id`
-- `POST /api/posts`
-- `PATCH /api/posts/:id`
-- `DELETE /api/posts/:id`
-- `POST|GET /api/auth/*` (better-auth)
+### GitHub Actions
 
-## 備考
+`main` is deployed by:
 
-- サインアップは `/signup`、サインインは `/login` から実行できます。
-- 投稿作成にはログインが必要です。
-- 投稿の更新/削除は投稿者本人のみ可能です。
+- [.github/workflows/deploy.yml](/Users/kurinokousaku/Workspace/maron/OpenCheats/.github/workflows/deploy.yml)
+
+If you use an API token for deploys, it needs enough Cloudflare permissions for:
+
+- Workers Scripts
+- Workers KV
+- Workers R2
+- Account Settings read
+
+## Data Model
+
+The run loop is centered on these tables:
+
+- `prompts`
+- `prompt_versions`
+- `catalogs`
+- `catalog_options`
+- `runs`
+- `artifacts`
+- `user_provider_credentials`
+
+In practice:
+
+- `runs` stores each execution
+- `artifacts` stores generated media and uploaded input images
+- `runs.settings_json.inputs` stores which images were used as inputs
+
+## Notes
+
+- Generated image/video artifacts are stored in R2.
+- Uploaded input images used in Playground are also persisted as artifacts so they can appear in History.
+- Provider credentials are stored per user and encrypted server-side.
+- The project currently prioritizes iteration speed over broad provider coverage.
+
+## Concept
+
+The product concept lives here:
+
+- [docs/concept.md](/Users/kurinokousaku/Workspace/maron/carbon-repo/Projects/OpenCheats/docs/concept.md)

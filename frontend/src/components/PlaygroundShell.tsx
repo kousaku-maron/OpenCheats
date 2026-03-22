@@ -310,7 +310,6 @@ function HistoryKindBadge({ item }: { item: HistoryItem }) {
       {kind === 'image' ? <ImageIcon {...iconProps} /> : null}
       {kind === 'video' ? <Clapperboard {...iconProps} /> : null}
       {kind === 'text' ? <FileText {...iconProps} /> : null}
-      <span>{kind}</span>
     </span>
   );
 }

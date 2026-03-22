@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { ArrowLeft, Check, Copy, Plus } from 'lucide-preact';
-import type { CatalogResponse } from '../lib/server/api';
+import type { CatalogResponse, PromptVersionResponse } from '../lib/server/api';
 import {
   createEmptyPromptDocument,
   normalizePromptDocument,
@@ -14,10 +14,23 @@ type Props = {
   promptId?: string;
   initialTitle?: string;
   initialDocument?: PromptDocument;
+  initialCurrentVersion?: number;
+  initialVersions?: PromptVersionResponse[];
   catalogs: CatalogResponse[];
 };
 
 type PickerMode = 'insert' | 'replace';
+
+function formatVersionDate(value: Date | string) {
+  const date = value instanceof Date ? value : new Date(value);
+  return new Intl.DateTimeFormat('ja-JP', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(date);
+}
 
 function buildOptionIndex(catalogs: CatalogResponse[]) {
   const optionIndex = new Map<string, CatalogResponse['options'][number]>();
@@ -271,6 +284,8 @@ export function PromptEditor({
   promptId,
   initialTitle = '',
   initialDocument = createEmptyPromptDocument(),
+  initialCurrentVersion = 1,
+  initialVersions = [],
   catalogs,
 }: Props) {
   const normalizedInitialDocument = normalizePromptDocument(initialDocument);
@@ -281,6 +296,11 @@ export function PromptEditor({
 
   const [title, setTitle] = useState(initialTitle);
   const [currentDocument, setCurrentDocument] = useState<PromptDocument>(normalizedInitialDocument);
+  const [currentVersion, setCurrentVersion] = useState(initialCurrentVersion);
+  const [versions, setVersions] = useState<PromptVersionResponse[]>(initialVersions);
+  const [selectedVersionId, setSelectedVersionId] = useState<string>(
+    initialVersions[0]?.id ?? '',
+  );
   const [, setStatus] = useState('');
   const [loading, setLoading] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
@@ -300,6 +320,17 @@ export function PromptEditor({
   const applyDocumentState = (nextDocument: PromptDocument) => {
     setCurrentDocument(nextDocument);
     setPreview(resolvePromptDocument(nextDocument, optionIndex));
+  };
+
+  const applyVersionState = (nextDocument: PromptDocument) => {
+    const normalizedDocument = normalizePromptDocument(nextDocument);
+    setCurrentDocument(normalizedDocument);
+    setPreview(resolvePromptDocument(normalizedDocument, optionIndex));
+
+    const root = editorRef.current;
+    if (root && !previewEnabled) {
+      renderDocument(root, normalizedDocument, optionIndex, catalogIndex);
+    }
   };
 
   const syncFromEditor = () => {
@@ -329,6 +360,21 @@ export function PromptEditor({
 
     renderDocument(root, currentDocument, optionIndex, catalogIndex);
   }, [previewEnabled]);
+
+  useEffect(() => {
+    if (mode !== 'edit') {
+      return;
+    }
+
+    const selectedVersion = versions.find((version) => version.id === selectedVersionId);
+    if (!selectedVersion) {
+      return;
+    }
+
+    applyVersionState(selectedVersion.document);
+    clearSelection();
+    selectionRef.current = null;
+  }, [selectedVersionId]);
 
   const rememberSelection = () => {
     const root = editorRef.current;
@@ -534,6 +580,24 @@ export function PromptEditor({
           window.location.href = `/prompts/${json.data.id}/edit`;
         }, 400);
       } else {
+        const nextVersion = json.data.current_version;
+        const nextDocument = payload.document;
+        const nextVersionId = crypto.randomUUID();
+
+        setCurrentVersion(nextVersion);
+        setVersions((current) => [
+          {
+            id: nextVersionId,
+            prompt_id: promptId ?? '',
+            version: nextVersion,
+            title: payload.title,
+            document: nextDocument,
+            created_at: new Date(),
+          },
+          ...current,
+        ]);
+        setSelectedVersionId(nextVersionId);
+        applyVersionState(nextDocument);
         setLoading(false);
       }
     } catch (error) {
@@ -610,75 +674,78 @@ export function PromptEditor({
       ? [selectedPickerCatalog]
       : [];
   const pickerTitle = showCatalogList ? 'Catalogs' : selectedPickerCatalog?.name ?? 'Catalog';
+  const selectedVersion = versions.find((version) => version.id === selectedVersionId) ?? null;
+  const hasVersions = mode === 'edit' && versions.length > 0;
+  const isViewingPastVersion =
+    hasVersions &&
+    selectedVersion !== null &&
+    selectedVersion.version !== currentVersion;
+  const saveLabel = loading
+    ? 'Saving...'
+    : isViewingPastVersion
+      ? 'Save as New Version'
+      : 'Save';
 
-  return (
-    <div className="prompt-editor-shell">
-      <form className="stack-lg" onSubmit={handleSubmit}>
-        <div className="field-nav-row">
-          <a href="/" className="btn-secondary button-with-icon nav-back-link" aria-label="Prompts に戻る">
-            <ArrowLeft aria-hidden="true" />
-            <span>Prompts</span>
-          </a>
+  const promptContent = (
+    <>
+      <section className="panel prompt-name-panel stack-sm">
+        <div className="prompt-panel-header">
+          <h2 className="section-title">Name</h2>
         </div>
+        <input
+          id="prompt-title"
+          className="text-input"
+          value={title}
+          onInput={(event) => setTitle(event.currentTarget.value)}
+          maxLength={200}
+          placeholder="Prompt 名"
+          required
+        />
+      </section>
 
-        <section className="panel prompt-name-panel stack-sm">
-          <div className="prompt-panel-header">
-            <h2 className="section-title">Name</h2>
-          </div>
-          <input
-            id="prompt-title"
-            className="text-input"
-            value={title}
-            onInput={(event) => setTitle(event.currentTarget.value)}
-            maxLength={200}
-            placeholder="Prompt 名"
-            required
-          />
-        </section>
-
-        <div className="editor-preview-grid editor-preview-grid-single">
-          {previewEnabled ? (
-            <section className="preview-panel">
-              <div className="editor-toolbar">
-                <div className="editor-toolbar-main">
-                  <h2 className="section-title">Prompt</h2>
-                </div>
-                <div className="toolbar-meta">
-                  <p className="muted-copy">{toPlainPromptText(preview).length} chars</p>
-                  <label className="preview-toggle">
-                    <span className="preview-toggle-label">Preview</span>
-                    <button
-                      type="button"
-                      className={`preview-switch${previewEnabled ? ' is-on' : ''}`}
-                      aria-pressed={previewEnabled}
-                      onClick={() => setPreviewEnabled((current) => !current)}
-                    >
-                      <span className="preview-switch-thumb" />
-                    </button>
-                  </label>
+      <div className="editor-preview-grid editor-preview-grid-single">
+        {previewEnabled ? (
+          <section className="preview-panel">
+            <div className="editor-toolbar">
+              <div className="editor-toolbar-main">
+                <h2 className="section-title">Prompt</h2>
+              </div>
+              <div className="toolbar-meta">
+                <p className="muted-copy">{toPlainPromptText(preview).length} chars</p>
+                <label className="preview-toggle">
+                  <span className="preview-toggle-label">Preview</span>
                   <button
                     type="button"
-                    className={`icon-button${copyFeedbackVisible ? ' is-success' : ''}`}
-                    aria-label={copyFeedbackVisible ? 'コピーしました' : 'Prompt をコピー'}
-                    onClick={copyPrompt}
+                    className={`preview-switch${previewEnabled ? ' is-on' : ''}`}
+                    aria-pressed={previewEnabled}
+                    onClick={() => setPreviewEnabled((current) => !current)}
                   >
-                    {copyFeedbackVisible ? (
-                      <Check aria-hidden="true" />
-                    ) : (
-                      <Copy aria-hidden="true" />
-                    )}
+                    <span className="preview-switch-thumb" />
                   </button>
-                </div>
+                </label>
+                <button
+                  type="button"
+                  className={`icon-button${copyFeedbackVisible ? ' is-success' : ''}`}
+                  aria-label={copyFeedbackVisible ? 'コピーしました' : 'Prompt をコピー'}
+                  onClick={copyPrompt}
+                >
+                  {copyFeedbackVisible ? (
+                    <Check aria-hidden="true" />
+                  ) : (
+                    <Copy aria-hidden="true" />
+                  )}
+                </button>
               </div>
-              <pre className="resolved-preview">{preview || 'ここに現在の Prompt 展開結果が表示されます。'}</pre>
-            </section>
-          ) : (
-            <section className="editor-panel">
-              <div className="editor-toolbar">
-                <div className="editor-toolbar-main">
-                  <div className="editor-title-row">
-                    <h2 className="section-title">Prompt</h2>
-                    <button
+            </div>
+            <pre className="resolved-preview">{preview || 'ここに現在の Prompt 展開結果が表示されます。'}</pre>
+          </section>
+        ) : (
+          <section className="editor-panel">
+            <div className="editor-toolbar">
+              <div className="editor-toolbar-main">
+                <div className="editor-title-row">
+                  <h2 className="section-title">Prompt</h2>
+                  <button
                     type="button"
                     className="btn-secondary button-with-icon"
                     onClick={() => openPicker('insert')}
@@ -688,74 +755,150 @@ export function PromptEditor({
                     </span>
                     Item
                   </button>
-                  </div>
-                </div>
-                <div className="toolbar-meta">
-                  <p className="muted-copy">{toPlainPromptText(preview).length} chars</p>
-                  <label className="preview-toggle">
-                    <span className="preview-toggle-label">Preview</span>
-                    <button
-                      type="button"
-                      className={`preview-switch${previewEnabled ? ' is-on' : ''}`}
-                      aria-pressed={previewEnabled}
-                      onClick={() => setPreviewEnabled((current) => !current)}
-                    >
-                      <span className="preview-switch-thumb" />
-                    </button>
-                  </label>
-                  <button
-                    type="button"
-                    className={`icon-button${copyFeedbackVisible ? ' is-success' : ''}`}
-                    aria-label={copyFeedbackVisible ? 'コピーしました' : 'Prompt をコピー'}
-                    onClick={copyPrompt}
-                  >
-                    {copyFeedbackVisible ? (
-                      <Check aria-hidden="true" />
-                    ) : (
-                      <Copy aria-hidden="true" />
-                    )}
-                  </button>
                 </div>
               </div>
+              <div className="toolbar-meta">
+                <p className="muted-copy">{toPlainPromptText(preview).length} chars</p>
+                <label className="preview-toggle">
+                  <span className="preview-toggle-label">Preview</span>
+                  <button
+                    type="button"
+                    className={`preview-switch${previewEnabled ? ' is-on' : ''}`}
+                    aria-pressed={previewEnabled}
+                    onClick={() => setPreviewEnabled((current) => !current)}
+                  >
+                    <span className="preview-switch-thumb" />
+                  </button>
+                </label>
+                <button
+                  type="button"
+                  className={`icon-button${copyFeedbackVisible ? ' is-success' : ''}`}
+                  aria-label={copyFeedbackVisible ? 'コピーしました' : 'Prompt をコピー'}
+                  onClick={copyPrompt}
+                >
+                  {copyFeedbackVisible ? (
+                    <Check aria-hidden="true" />
+                  ) : (
+                    <Copy aria-hidden="true" />
+                  )}
+                </button>
+              </div>
+            </div>
 
-              <div
-                ref={editorRef}
-                className="prompt-editor"
-                contentEditable
-                spellcheck={false}
-                onCompositionStart={() => {
-                  composingRef.current = true;
-                }}
-                onCompositionEnd={() => {
-                  composingRef.current = false;
-                }}
-                onClick={handleEditorClick}
-                onKeyDown={handleEditorKeyDown}
-                onKeyUp={rememberSelection}
-                onMouseUp={rememberSelection}
-                onInput={syncFromEditor}
-              />
+            <div
+              ref={editorRef}
+              className="prompt-editor"
+              contentEditable
+              spellcheck={false}
+              onCompositionStart={() => {
+                composingRef.current = true;
+              }}
+              onCompositionEnd={() => {
+                composingRef.current = false;
+              }}
+              onClick={handleEditorClick}
+              onKeyDown={handleEditorKeyDown}
+              onKeyUp={rememberSelection}
+              onMouseUp={rememberSelection}
+              onInput={syncFromEditor}
+            />
+          </section>
+        )}
+      </div>
+    </>
+  );
 
-            </section>
-          )}
-        </div>
+  return (
+    <div className={`prompt-editor-shell${hasVersions ? ' has-versions-layout' : ''}`}>
+      {hasVersions ? (
+        <form className="prompt-edit-layout has-versions" onSubmit={handleSubmit}>
+          <div className="prompt-edit-main prompt-edit-main-with-versions">
+            <div className="field-nav-row">
+              <a href="/" className="btn-secondary button-with-icon nav-back-link" aria-label="Prompts に戻る">
+                <ArrowLeft aria-hidden="true" />
+                <span>Prompts</span>
+              </a>
+            </div>
 
-        <div className="page-actions">
-          <button type="submit" className="btn-primary" disabled={loading}>
-            {loading ? 'Saving...' : 'Save'}
-          </button>
-          {mode === 'edit' && promptId ? (
-            <a href={`/playground?promptId=${promptId}`} className="btn-secondary">
-              Open in Playground
+            {promptContent}
+
+            <div className="page-actions">
+              <button type="submit" className="btn-primary" disabled={loading}>
+                {saveLabel}
+              </button>
+              {mode === 'edit' && promptId ? (
+                <a href={`/playground?promptId=${promptId}`} className="btn-secondary">
+                  Open in Playground
+                </a>
+              ) : null}
+              {mode === 'edit' ? (
+                <button type="button" className="btn-ghost-danger" onClick={handleDelete} disabled={loading}>
+                  Delete
+                </button>
+              ) : null}
+            </div>
+          </div>
+
+          {hasVersions ? (
+            <aside className="panel prompt-versions-panel stack-sm">
+              <div className="prompt-panel-header">
+                <h2 className="section-title">Versions</h2>
+              </div>
+              <div className="prompt-versions-list">
+                {versions.map((version) => {
+                  const isSelected = version.id === selectedVersionId;
+                  const isCurrent = version.version === currentVersion;
+
+                  return (
+                    <button
+                      key={version.id}
+                      type="button"
+                      className={`prompt-version-item${isSelected ? ' is-selected' : ''}`}
+                      onClick={() => setSelectedVersionId(version.id)}
+                      disabled={loading}
+                    >
+                      <div className="prompt-version-item-header">
+                        <span className="prompt-version-item-label">{`v${version.version}`}</span>
+                        {isCurrent ? (
+                          <span className="prompt-version-current-badge">Current</span>
+                        ) : null}
+                      </div>
+                      <p className="prompt-version-item-date">{formatVersionDate(version.created_at)}</p>
+                    </button>
+                  );
+                })}
+              </div>
+            </aside>
+          ) : null}
+        </form>
+      ) : (
+        <form className="stack-lg prompt-editor-form" onSubmit={handleSubmit}>
+          <div className="field-nav-row">
+            <a href="/" className="btn-secondary button-with-icon nav-back-link" aria-label="Prompts に戻る">
+              <ArrowLeft aria-hidden="true" />
+              <span>Prompts</span>
             </a>
-          ) : null}
-          {mode === 'edit' ? (
-            <button type="button" className="btn-ghost-danger" onClick={handleDelete} disabled={loading}>
-              Delete
+          </div>
+
+          {promptContent}
+
+          <div className="page-actions">
+            <button type="submit" className="btn-primary" disabled={loading}>
+              {saveLabel}
             </button>
-          ) : null}
-        </div>
-      </form>
+            {mode === 'edit' && promptId ? (
+              <a href={`/playground?promptId=${promptId}`} className="btn-secondary">
+                Open in Playground
+              </a>
+            ) : null}
+            {mode === 'edit' ? (
+              <button type="button" className="btn-ghost-danger" onClick={handleDelete} disabled={loading}>
+                Delete
+              </button>
+            ) : null}
+          </div>
+        </form>
+      )}
 
       {pickerOpen ? (
         <div className="picker-backdrop" onClick={() => setPickerOpen(false)}>

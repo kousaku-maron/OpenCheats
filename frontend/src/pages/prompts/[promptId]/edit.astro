@@ -1,7 +1,7 @@
 ---
 import BaseLayout from '../../../layouts/BaseLayout.astro';
 import { PromptEditor } from '../../../components/PromptEditor';
-import { getPromptById, listCatalogs } from '../../../lib/server/api';
+import { getPromptById, listCatalogs, listPromptVersions } from '../../../lib/server/api';
 
 if (!Astro.locals.user) {
   return Astro.redirect('/login');
@@ -12,9 +12,10 @@ if (!promptId) {
   return Astro.redirect('/');
 }
 
-const [prompt, catalogs] = await Promise.all([
+const [prompt, catalogs, versions] = await Promise.all([
   getPromptById(Astro.locals.db, Astro.locals.user.id, promptId),
   listCatalogs(Astro.locals.db, Astro.locals.user.id, true),
+  listPromptVersions(Astro.locals.db, Astro.locals.user.id, promptId),
 ]);
 
 if (!prompt) {
@@ -22,13 +23,15 @@ if (!prompt) {
 }
 ---
 
-<BaseLayout title={`${prompt.title} | OpenCheats`}>
+<BaseLayout title={`${prompt.title} | OpenCheats`} fullWidth>
   <PromptEditor
     client:load
     mode="edit"
     promptId={prompt.id}
     initialTitle={prompt.title}
     initialDocument={prompt.document}
+    initialCurrentVersion={prompt.current_version}
+    initialVersions={versions}
     catalogs={catalogs}
   />
 </BaseLayout>
