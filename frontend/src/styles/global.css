@@ -290,6 +290,8 @@ textarea {
 .list-card-meta {
   color: var(--muted);
   font-size: 0.9rem;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .page-shell {
