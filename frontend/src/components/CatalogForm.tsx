@@ -8,6 +8,8 @@ type CatalogOptionFormValue = {
   sort_order: number;
 };
 
+const EMPTY_INITIAL_OPTIONS: CatalogOptionFormValue[] = [];
+
 type Props = {
   mode: 'create' | 'edit';
   catalogId?: string;
@@ -44,7 +46,7 @@ export function CatalogForm({
   catalogId,
   initialName = '',
   initialDescription = '',
-  initialOptions = [],
+  initialOptions = EMPTY_INITIAL_OPTIONS,
 }: Props) {
   const [name, setName] = useState(initialName);
   const [description, setDescription] = useState(initialDescription);
